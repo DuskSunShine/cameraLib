@@ -1,32 +1,9 @@
-/*
- * Copyright (C) 2012 ZXing authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.scy.cameralib;
 
-import android.content.Context;
-import android.content.SharedPreferences;
+
 import android.hardware.Camera;
 import android.os.AsyncTask;
-import android.preference.PreferenceManager;
 import android.util.Log;
-
-import com.google.zxing.client.android.PreferencesActivity;
-
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.concurrent.RejectedExecutionException;
 
 @SuppressWarnings("deprecation") // camera APIs
@@ -35,27 +12,25 @@ final class AutoFocusManager implements Camera.AutoFocusCallback {
   private static final String TAG = AutoFocusManager.class.getSimpleName();
 
   private static final long AUTO_FOCUS_INTERVAL_MS = 2000L;
-  private static final Collection<String> FOCUS_MODES_CALLING_AF;
-  static {
-    FOCUS_MODES_CALLING_AF = new ArrayList<>(2);
-    FOCUS_MODES_CALLING_AF.add(Camera.Parameters.FOCUS_MODE_AUTO);
-    FOCUS_MODES_CALLING_AF.add(Camera.Parameters.FOCUS_MODE_MACRO);
-  }
 
   private boolean stopped;
   private boolean focusing;
-  private final boolean useAutoFocus;
+  private  boolean useAutoFocus=true;
   private final Camera camera;
   private AsyncTask<?,?,?> outstandingTask;
 
-  AutoFocusManager(Context context, Camera camera) {
+  public boolean isUseAutoFocus() {
+    return useAutoFocus;
+  }
+
+  public void setUseAutoFocus(boolean useAutoFocus) {
+    this.useAutoFocus = useAutoFocus;
+  }
+
+  AutoFocusManager(Camera camera) {
     this.camera = camera;
-    SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(context);
     String currentFocusMode = camera.getParameters().getFocusMode();
-    useAutoFocus =
-        sharedPrefs.getBoolean(PreferencesActivity.KEY_AUTO_FOCUS, true) &&
-        FOCUS_MODES_CALLING_AF.contains(currentFocusMode);
-    Log.i(TAG, "Current focus mode '" + currentFocusMode + "'; use auto focus? " + useAutoFocus);
+    Log.i(TAG, "当前对焦模式 '" + currentFocusMode + "'; 使用自动对焦? " + isUseAutoFocus());
     start();
   }
 
@@ -78,7 +53,7 @@ final class AutoFocusManager implements Camera.AutoFocusCallback {
   }
 
   synchronized void start() {
-    if (useAutoFocus) {
+    if (isUseAutoFocus()) {
       outstandingTask = null;
       if (!stopped && !focusing) {
         try {
@@ -105,7 +80,7 @@ final class AutoFocusManager implements Camera.AutoFocusCallback {
 
   synchronized void stop() {
     stopped = true;
-    if (useAutoFocus) {
+    if (isUseAutoFocus()) {
       cancelOutstandingTask();
       // Doesn't hurt to call this even if not focusing
       try {
