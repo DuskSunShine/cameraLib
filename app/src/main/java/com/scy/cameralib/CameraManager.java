@@ -64,6 +64,10 @@ public class CameraManager implements Camera.PreviewCallback {
         this.openAutoFocus = openAutoFocus;
     }
 
+    public Point getCameraResolution() {
+        return cameraResolution;
+    }
+
     private CameraManager() {
     }
 
@@ -275,6 +279,9 @@ public class CameraManager implements Camera.PreviewCallback {
         return mCamera != null;
     }
 
+    public Point getPreviewSizeOnScreen() {
+        return previewSizeOnScreen;
+    }
 
     /**
      * 设置期望的相机参数
@@ -431,12 +438,15 @@ public class CameraManager implements Camera.PreviewCallback {
                 return null;
             }
 
-            int width = findDesiredDimensionInRange(screenResolution.x, MIN_FRAME_WIDTH, MAX_FRAME_WIDTH);
+           /* int width = findDesiredDimensionInRange(screenResolution.x, MIN_FRAME_WIDTH, MAX_FRAME_WIDTH);
             int height = findDesiredDimensionInRange(screenResolution.y, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);
 
             int leftOffset = (screenResolution.x - width) / 2;
             int topOffset = (screenResolution.y - height) / 2;
-            framingRect = new Rect(leftOffset, topOffset, leftOffset + width, topOffset + height);
+            framingRect = new Rect(leftOffset, topOffset, leftOffset + width, topOffset + height);*/
+            int leftOffset = (screenResolution.x ) / 2;
+            int topOffset = (screenResolution.y ) / 2;
+            framingRect = new Rect(leftOffset-200, topOffset-200, leftOffset + 200, topOffset + 200);
             Log.d(TAG, "Calculated framing rect: " + framingRect);
         }
         return framingRect;

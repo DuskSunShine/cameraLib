@@ -6,6 +6,7 @@ import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
+import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.YuvImage;
 import android.hardware.Camera;
@@ -32,7 +33,7 @@ public  class CameraActivity extends Activity implements SurfaceHolder.Callback 
     private Camera camera;
     ImageView image;
     ImageView image2;
-    ViewfinderView maskView;
+    RectViewfinderView maskView;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -71,9 +72,13 @@ public  class CameraActivity extends Activity implements SurfaceHolder.Callback 
         cameraManager.setOnPreviewFrameListener(new CameraManager.OnPreviewFrameListener() {
             @Override
             public void onPreviewFrame(byte[] data, Camera camera) {
+
+                PlanarYUVLuminanceSource source = cameraManager
+                        .buildLuminanceSource(data, cameraManager.getCameraResolution().x, cameraManager.getCameraResolution().y);
+                bundleThumbnail(source);
                 //这里byte数据即是实时获取的帧数据 只要相机正在预览就会一直回调此方法
                 //需要注意的是 这里的byte数据不能够直接使用 需要转换下格式
-                Bitmap bmp = null;
+                /*Bitmap bmp = null;
                 try {
                     YuvImage image = new YuvImage(data, ImageFormat.NV21, 480, 640, null);
                     if (image != null) {
@@ -85,7 +90,7 @@ public  class CameraActivity extends Activity implements SurfaceHolder.Callback 
                     }
                 } catch (Exception ex) {
                     Log.e("Sys", "Error:" + ex.getMessage());
-                }
+                }*/
             }
         });
         image2.setOnClickListener(new View.OnClickListener() {
@@ -99,10 +104,26 @@ public  class CameraActivity extends Activity implements SurfaceHolder.Callback 
             @Override
             public void onTakePhoto(String path) {
                 Log.i(TAG,path);
-                Bitmap bitmap = BitmapFactory.decodeFile(path);
-                image2.setImageBitmap(bitmap);
             }
         });
+    }
+
+    private  void bundleThumbnail(PlanarYUVLuminanceSource source) {
+        int[] pixels = source.renderThumbnail();
+        int width = source.getThumbnailWidth();
+        int height = source.getThumbnailHeight();
+        Bitmap bitmap = Bitmap.createBitmap(pixels, 0, width, width, height, Bitmap.Config.ARGB_8888);
+        Matrix matrix = new Matrix();
+        matrix.preRotate(90);
+        bitmap=Bitmap.createBitmap(bitmap,0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, false);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 80, out);
+        bitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true);
+
+
+        // Mutable copy:
+        //barcode = barcode.copy(Bitmap.Config.ARGB_8888, true);
+        CameraActivity.this.image.setImageBitmap(bitmap);
     }
     @Override
     protected void onPause() {
