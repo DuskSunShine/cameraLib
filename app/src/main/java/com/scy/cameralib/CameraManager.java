@@ -137,7 +137,7 @@ public class CameraManager implements Camera.PreviewCallback {
             mCamera.startPreview();
             previewing = true;
             if (openAutoFocus) {
-                autoFocusManager = new AutoFocusManager(mCamera);
+                autoFocusManager = new AutoFocusManager(mCamera,openAutoFocus);
             }
         }
         if (mCamera != null && previewing) {

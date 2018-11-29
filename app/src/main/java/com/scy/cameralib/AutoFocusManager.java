@@ -7,7 +7,7 @@ import android.util.Log;
 import java.util.concurrent.RejectedExecutionException;
 
 @SuppressWarnings("deprecation") // camera APIs
-final class AutoFocusManager implements Camera.AutoFocusCallback {
+public  class AutoFocusManager implements Camera.AutoFocusCallback {
 
   private static final String TAG = AutoFocusManager.class.getSimpleName();
 
@@ -15,22 +15,15 @@ final class AutoFocusManager implements Camera.AutoFocusCallback {
 
   private boolean stopped;
   private boolean focusing;
-  private  boolean useAutoFocus=true;
+  private  boolean useAutoFocus;
   private final Camera camera;
   private AsyncTask<?,?,?> outstandingTask;
 
-  public boolean isUseAutoFocus() {
-    return useAutoFocus;
-  }
-
-  public void setUseAutoFocus(boolean useAutoFocus) {
-    this.useAutoFocus = useAutoFocus;
-  }
-
-  AutoFocusManager(Camera camera) {
+  public AutoFocusManager(Camera camera,boolean useAutoFocus) {
     this.camera = camera;
+    this.useAutoFocus=useAutoFocus;
     String currentFocusMode = camera.getParameters().getFocusMode();
-    Log.i(TAG, "当前对焦模式 '" + currentFocusMode + "'; 使用自动对焦? " + isUseAutoFocus());
+    Log.i(TAG, "当前对焦模式 '" + currentFocusMode + "'; 使用自动对焦? " +useAutoFocus);
     start();
   }
 
@@ -53,7 +46,7 @@ final class AutoFocusManager implements Camera.AutoFocusCallback {
   }
 
   synchronized void start() {
-    if (isUseAutoFocus()) {
+    if (useAutoFocus) {
       outstandingTask = null;
       if (!stopped && !focusing) {
         try {
@@ -78,9 +71,9 @@ final class AutoFocusManager implements Camera.AutoFocusCallback {
     }
   }
 
-  synchronized void stop() {
+ public synchronized void stop() {
     stopped = true;
-    if (isUseAutoFocus()) {
+    if (useAutoFocus) {
       cancelOutstandingTask();
       // Doesn't hurt to call this even if not focusing
       try {

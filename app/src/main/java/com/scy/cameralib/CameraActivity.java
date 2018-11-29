@@ -1,16 +1,13 @@
 package com.scy.cameralib;
 
-import android.app.Activity;
+
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.ImageFormat;
 import android.graphics.Matrix;
-import android.graphics.Rect;
-import android.graphics.YuvImage;
 import android.hardware.Camera;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
@@ -18,10 +15,9 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
-
 import java.io.ByteArrayOutputStream;
 
-public  class CameraActivity extends Activity implements SurfaceHolder.Callback {
+public  class CameraActivity extends AppCompatActivity implements SurfaceHolder.Callback {
     private static final String TAG="CameraActivity";
     protected CameraSurfaceView surfaceView;
 
@@ -104,6 +100,13 @@ public  class CameraActivity extends Activity implements SurfaceHolder.Callback 
             @Override
             public void onTakePhoto(String path) {
                 Log.i(TAG,path);
+            }
+        });
+
+        maskView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
             }
         });
     }
