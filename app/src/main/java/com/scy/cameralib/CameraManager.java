@@ -58,6 +58,7 @@ public class CameraManager implements Camera.PreviewCallback {
     private OnPreviewFrameListener previewFrameListener;
     private AutoFocusManager autoFocusManager;
     private boolean openAutoFocus = false;//开启连续自动对焦(不适合拍照)
+    private Point bestPictureSizeValue;
 
 
     public void setOpenAutoFocus(boolean openAutoFocus) {
@@ -222,6 +223,7 @@ public class CameraManager implements Camera.PreviewCallback {
                 Log.i(TAG, "相机分辨率: " + cameraResolution);
                 bestPreviewSize = findBestPreviewSizeValue(parameters, screenResolution);
                 Log.i(TAG, "最佳可用预览尺寸: " + bestPreviewSize);
+                bestPictureSizeValue = findBestPictureSizeValue(parameters, screenResolution);
                 //是否竖屏
                 boolean isScreenPortrait = screenResolution.x < screenResolution.y;
                 boolean isPreviewSizePortrait = bestPreviewSize.x < bestPreviewSize.y;
@@ -297,9 +299,11 @@ public class CameraManager implements Camera.PreviewCallback {
                 parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
             }
         }
-
+        //SetRecordingHint to true also a workaround for low framerate on Nexus 4
+        //https://stackoverflow.com/questions/14131900/extreme-camera-lag-on-nexus-4
+        parameters.setRecordingHint(true);
         parameters.setPreviewSize(bestPreviewSize.x, bestPreviewSize.y);
-        parameters.setPictureSize(bestPreviewSize.x, bestPreviewSize.y);
+        parameters.setPictureSize(bestPictureSizeValue.x, bestPictureSizeValue.y);
         parameters.setJpegQuality(80);
         mCamera.setParameters(parameters);
 
@@ -395,6 +399,79 @@ public class CameraManager implements Camera.PreviewCallback {
         return defaultSize;
     }
 
+    private Point findBestPictureSizeValue(Camera.Parameters parameters, Point screenResolution) {
+
+        List<Camera.Size> rawSupportedSizes = parameters.getSupportedPictureSizes();
+        if (rawSupportedSizes == null) {
+            Log.w(TAG, "设备返回未支持的图片大小；使用默认");
+            Camera.Size defaultSize = parameters.getPictureSize();
+            if (defaultSize == null) {
+                throw new IllegalStateException("参数中没有图片大小！");
+            }
+            return new Point(defaultSize.width, defaultSize.height);
+        }
+
+        if (Log.isLoggable(TAG, Log.INFO)) {
+            StringBuilder previewSizesString = new StringBuilder();
+            for (Camera.Size size : rawSupportedSizes) {
+                previewSizesString.append(size.width).append('x').append(size.height).append(' ');
+            }
+            Log.i(TAG, "设备支撑的图片大小: " + previewSizesString);
+        }
+
+        double screenAspectRatio = screenResolution.x / (double) screenResolution.y;
+
+        // Find a suitable size, with max resolution
+        int maxResolution = 0;
+        Camera.Size maxResPreviewSize = null;
+        for (Camera.Size size : rawSupportedSizes) {
+            int realWidth = size.width;
+            int realHeight = size.height;
+            int resolution = realWidth * realHeight;
+            if (resolution < MIN_PREVIEW_PIXELS) {
+                continue;
+            }
+
+            boolean isCandidatePortrait = realWidth < realHeight;
+            int maybeFlippedWidth = isCandidatePortrait ? realHeight : realWidth;
+            int maybeFlippedHeight = isCandidatePortrait ? realWidth : realHeight;
+            double aspectRatio = maybeFlippedWidth / (double) maybeFlippedHeight;
+            double distortion = Math.abs(aspectRatio - screenAspectRatio);
+            if (distortion > MAX_ASPECT_DISTORTION) {
+                continue;
+            }
+
+            if (maybeFlippedWidth == screenResolution.x && maybeFlippedHeight == screenResolution.y) {
+                Point exactPoint = new Point(realWidth, realHeight);
+                Log.i(TAG, "照片大小与屏幕尺寸完全匹配: " + exactPoint);
+                return exactPoint;
+            }
+
+            // Resolution is suitable; record the one with max resolution
+            if (resolution > maxResolution) {
+                maxResolution = resolution;
+                maxResPreviewSize = size;
+            }
+        }
+
+        // 如果没有精确匹配，请使用最大预览大小。由于需要额外的计算，在旧设备上这不是一个好主意。
+        // 我们可能会在更新的Android 4+设备上看到这一点，因为CPU更加强大。
+        if (maxResPreviewSize != null) {
+            Point largestSize = new Point(maxResPreviewSize.width, maxResPreviewSize.height);
+            Log.i(TAG, "使用最大图片大小: " + largestSize);
+            return largestSize;
+        }
+
+        // 如果没有任何合适的，返回当前的预览大小
+        Camera.Size defaultPreview = parameters.getPictureSize();
+        if (defaultPreview == null) {
+            throw new IllegalStateException("参数中没有可使用大小!");
+        }
+        Point defaultSize = new Point(defaultPreview.width, defaultPreview.height);
+        Log.i(TAG, "设备返回未支持的图片大小；使用默认: " + defaultSize);
+        return defaultSize;
+    }
+
     /**
      * Like {@link #getFramingRect} but coordinates are in terms of the preview frame,
      * not UI / screen.
@@ -447,7 +524,7 @@ public class CameraManager implements Camera.PreviewCallback {
             int leftOffset = (screenResolution.x ) / 2;
             int topOffset = (screenResolution.y ) / 2;
             framingRect = new Rect(leftOffset-200, topOffset-200, leftOffset + 200, topOffset + 200);
-            Log.d(TAG, "Calculated framing rect: " + framingRect);
+            Log.d(TAG, "取景框大小: " + framingRect);
         }
         return framingRect;
     }
@@ -479,12 +556,26 @@ public class CameraManager implements Camera.PreviewCallback {
     }
 
     public PlanarYUVLuminanceSource buildLuminanceSource(byte[] data, int width, int height) {
-        Rect rect = getFramingRectInPreview();
+        Rect rect = getFramingRect();
         if (rect == null) {
             return null;
         }
+        //取景框宽高
+        int interceptWidth=rect.width();
+        int  interceptHeight=rect.height();
         // Go ahead and assume it's YUV rather than die.
-        return new PlanarYUVLuminanceSource(data, width, height, rect.left, rect.top,
-                rect.width(), rect.height(), false);
+        //保证开始截取的像素+需要截取宽度宽<=图片大小
+        if (rect.left+interceptWidth>width){
+            interceptWidth=width;
+        }
+        if (rect.top+interceptHeight>width){
+            interceptHeight=height;
+        }
+        int x = width/2 - interceptWidth/2;
+        int y = height/2 - interceptHeight/2;
+       return new PlanarYUVLuminanceSource(data, width, height, x, y,
+                interceptWidth, interceptHeight, false);
+//            return new PlanarYUVLuminanceSource(data, width, height, rect.left, rect.top,
+//                    rect.width(), rect.height(), false);
     }
 }

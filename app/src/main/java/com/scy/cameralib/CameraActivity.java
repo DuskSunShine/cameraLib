@@ -118,8 +118,6 @@ public  class CameraActivity extends Activity implements SurfaceHolder.Callback 
         bitmap=Bitmap.createBitmap(bitmap,0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, false);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.JPEG, 80, out);
-        bitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true);
-
 
         // Mutable copy:
         //barcode = barcode.copy(Bitmap.Config.ARGB_8888, true);

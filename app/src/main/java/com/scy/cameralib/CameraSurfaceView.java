@@ -140,19 +140,23 @@ public class CameraSurfaceView extends SurfaceView {
                         Log.i("拍照原始尺寸",bm.getWidth()+","+bm.getHeight());
                         //旋转后rotaBitmap是960×1280.预览surfaview的大小是540×800
                         //将960×1280缩放到540×800
-                        int width=framingRect.right-framingRect.left;
-                        int  height=framingRect.bottom-framingRect.top;
+                        int width=framingRect.width();
+                        int  height=framingRect.height();
                         Point bestPreviewSize = cameraManager.getPreviewSizeOnScreen();
                         Bitmap sizeBitmap = Bitmap.createScaledBitmap(bm, bestPreviewSize.x, bestPreviewSize.y, true);
                         Log.i("拍照缩放到surface大小",sizeBitmap.getWidth()+","+sizeBitmap.getHeight());
                         Log.i("矩形取景框区域",framingRect.toString());
+                        //保证开始截取的像素+需要截取宽度宽<=图片大小
                         if (framingRect.left+width>sizeBitmap.getWidth()){
                             width=sizeBitmap.getWidth();
                         }
                         if (framingRect.top+height>sizeBitmap.getHeight()){
                             height=sizeBitmap.getHeight();
                         }
-                        rectBitmap = Bitmap.createBitmap(sizeBitmap, framingRect.left, framingRect.top, width, height);//截取
+                        int x = sizeBitmap.getWidth()/2 - width/2;
+                        int y = sizeBitmap.getHeight()/2 - height/2;
+                        rectBitmap = Bitmap.createBitmap(sizeBitmap, x, y, width, height);//截取
+                        Log.i("拍照最终大小",rectBitmap.getWidth()+","+rectBitmap.getHeight());
                         bos = new BufferedOutputStream(new FileOutputStream(picFile));
                         rectBitmap.compress(Bitmap.CompressFormat.JPEG, 80, bos);
                     } catch (Exception e) {
