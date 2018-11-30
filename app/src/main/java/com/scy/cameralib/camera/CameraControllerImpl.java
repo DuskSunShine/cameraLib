@@ -10,7 +10,6 @@ import android.view.SurfaceHolder;
 import android.view.WindowManager;
 
 import com.scy.cameralib.AutoFocusManager;
-import com.scy.cameralib.CameraManager;
 
 import java.io.IOException;
 
@@ -18,9 +17,9 @@ import java.io.IOException;
  * Created by SCY on 2018/11/29 at 11:52.
  * 相机控制具体实现
  */
-public class CameraControlImpl implements CameraControl,Camera.PreviewCallback {
+public class CameraControllerImpl implements CameraController,Camera.PreviewCallback {
 
-    private static final String TAG = "CameraControlImpl";
+    private static final String TAG = "CameraControllerImpl";
 
     /**
      * 相机方向
@@ -67,7 +66,7 @@ public class CameraControlImpl implements CameraControl,Camera.PreviewCallback {
 
     private Context mContext;
 
-    public CameraControlImpl(Context mContext) {
+    public CameraControllerImpl(Context mContext) {
         this.mContext = mContext;
     }
 
@@ -230,10 +229,11 @@ public class CameraControlImpl implements CameraControl,Camera.PreviewCallback {
     }
 
     @Override
-    public synchronized void openDriver(SurfaceHolder holder) {
+    public synchronized void openDriver(SurfaceHolder holder,int cameraId) {
+        openCamera(cameraId);
         initCameraParameters();
         try {
-            if (isCameraOpen()) {
+            if (mCamera!=null) {
                 mCamera.setPreviewDisplay(holder);
             }
         } catch (IOException e) {

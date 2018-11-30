@@ -18,7 +18,7 @@ public class CameraManager implements CameraLifecycle, SurfaceHolder.Callback {
     @SuppressLint("StaticFieldLeak")
     private static Context mContext;
 
-    private CameraControlImpl cameraControl;
+    private CameraControllerImpl cameraControl;
     /**
      * 是否开始预览
      */
@@ -43,17 +43,17 @@ public class CameraManager implements CameraLifecycle, SurfaceHolder.Callback {
     }
 
     @Override
-    public  void onCreate(SurfaceHolder surfaceHolder, CameraFacing cameraId) {
+    public void onCreate(SurfaceHolder surfaceHolder, CameraFacing cameraId) {
         this.surfaceHolder = surfaceHolder;
         this.cameraId = cameraId;
         surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
         surfaceHolder.setKeepScreenOn(true);
-        cameraControl = new CameraControlImpl(mContext);
+        cameraControl = new CameraControllerImpl(mContext);
     }
 
 
     @Override
-    public  void onResume() {
+    public void onResume() {
         if (hasSurface) {
             // The activity was paused but not stopped, so the surface still exists. Therefore
             // surfaceCreated() won't be called, so init the camera here.
@@ -72,13 +72,12 @@ public class CameraManager implements CameraLifecycle, SurfaceHolder.Callback {
      * 初始化相机，开始预览
      */
     private void initCameraPreview() {
-        cameraControl.openCamera(cameraId.ordinal());
-        cameraControl.openDriver(surfaceHolder);
+        cameraControl.openDriver(surfaceHolder, cameraId.ordinal());
         cameraControl.startPreview();
     }
 
     @Override
-    public  void onPause() {
+    public void onPause() {
         cameraControl.stopPreview();
         cameraControl.closeDriver();
         if (!hasSurface) {
@@ -111,7 +110,7 @@ public class CameraManager implements CameraLifecycle, SurfaceHolder.Callback {
         hasSurface = false;
     }
 
-    public CameraControlImpl getCameraControl() {
+    public CameraControllerImpl getCameraController() {
         return cameraControl;
     }
 }

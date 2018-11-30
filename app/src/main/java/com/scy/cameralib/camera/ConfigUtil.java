@@ -11,7 +11,7 @@ import java.util.List;
  */
 class ConfigUtil {
 
-    private static final String TAG="CameraConfigImpl";
+    private static final String TAG="ConfigUtil";
 
     private static final int MIN_PREVIEW_PIXELS = 480 * 320; // normal screen
 

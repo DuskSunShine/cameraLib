@@ -2,10 +2,8 @@ package com.scy.cameralib;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.SurfaceHolder;
 
-import com.scy.cameralib.camera.CameraControlImpl;
 import com.scy.cameralib.camera.CameraFacing;
 import com.scy.cameralib.camera.CameraManager;
 

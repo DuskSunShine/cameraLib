@@ -7,7 +7,7 @@ import android.view.SurfaceHolder;
  * Created by SCY on 2018/11/29 at 11:31.
  * 相机的一系列操作，比如打开/关闭相机。
  */
-public interface CameraControl {
+public interface CameraController {
 
     /**
      * 打开硬件相机
@@ -37,7 +37,7 @@ public interface CameraControl {
      * 打开相机后，配置完成设置预览等。
      * @param holder
      */
-    void openDriver(SurfaceHolder holder);
+    void openDriver(SurfaceHolder holder,int cameraId);
 
     /**
      *关闭相机驱动，释放camera
