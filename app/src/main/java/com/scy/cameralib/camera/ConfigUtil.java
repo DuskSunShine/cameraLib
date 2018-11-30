@@ -3,11 +3,12 @@ package com.scy.cameralib.camera;
 import android.graphics.Point;
 import android.hardware.Camera;
 import android.util.Log;
-
 import java.util.List;
 
 /**
  * Created by SCY on 2018/11/29 at 14:13.
+ * 最佳预览尺寸最好==最佳照片尺寸
+ * 不然旋转屏幕会出现预览变形的情况
  */
 class ConfigUtil {
 

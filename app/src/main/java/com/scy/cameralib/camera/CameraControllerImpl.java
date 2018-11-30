@@ -8,16 +8,14 @@ import android.view.Display;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.WindowManager;
-
 import com.scy.cameralib.AutoFocusManager;
-
 import java.io.IOException;
 
 /**
  * Created by SCY on 2018/11/29 at 11:52.
  * 相机控制具体实现
  */
-public class CameraControllerImpl implements CameraController,Camera.PreviewCallback {
+public class CameraControllerImpl implements CameraController, Camera.PreviewCallback {
 
     private static final String TAG = "CameraControllerImpl";
 
@@ -36,11 +34,12 @@ public class CameraControllerImpl implements CameraController,Camera.PreviewCall
      */
     private Camera mCamera;
 
+    /**
+     * 是否开始预览
+     */
     private boolean previewing;
 
     private AutoFocusManager autoFocusManager;
-
-    private OnPreviewFrameListener previewFrameListener;
 
     /**
      * 开启连续自动对焦(不适合拍照)
@@ -52,22 +51,42 @@ public class CameraControllerImpl implements CameraController,Camera.PreviewCall
     private boolean initialized;
 
     /**
-     *
+     * 屏幕分辨率
      */
     private Point screenResolution;
 
+    /**
+     * 相机分辨率
+     */
     private Point cameraResolution;
 
+    /**
+     * 最佳预览尺寸
+     */
     private Point bestPreviewSize;
 
+    /**
+     * 屏幕上预览结果
+     */
+    private Point previewOnScreen;
+
+    /**
+     * 最佳照片尺寸
+     */
     private Point bestPictureSize;
 
+    /**
+     * 最终的相机方向
+     */
     private int cwRotationCamera;
 
     private Context mContext;
 
-    public CameraControllerImpl(Context mContext) {
+    private OnPreviewFrameListener previewFrameListener;
+
+    CameraControllerImpl(Context mContext, OnPreviewFrameListener previewFrameListener) {
         this.mContext = mContext;
+        this.previewFrameListener = previewFrameListener;
     }
 
     @Override
@@ -119,14 +138,14 @@ public class CameraControllerImpl implements CameraController,Camera.PreviewCall
                             throw new IllegalArgumentException("Bad rotation: " + displayRotation);
                         }
                 }
-                Log.i(TAG, "当前显示角度#: " +displayDegree);
+                Log.i(TAG, "当前显示角度#: " + displayDegree);
 
-                cwRotationCamera=cameraOrientation;
+                cwRotationCamera = cameraOrientation;
                 Log.i(TAG, "当前相机角度#: " + cameraOrientation);
 
                 // Still not 100% sure about this. But acts like we need to flip this:
                 if (CameraFacing.values()[cameraFacing] == CameraFacing.FRONT) {
-                    cwRotationCamera= (360 - cwRotationCamera) % 360;
+                    cwRotationCamera = (360 - cwRotationCamera) % 360;
                     Log.i(TAG, "前置摄像头重置方向#: " + cwRotationCamera);
                 }
 
@@ -143,15 +162,20 @@ public class CameraControllerImpl implements CameraController,Camera.PreviewCall
                 bestPreviewSize = ConfigUtil.findBestPreviewSizeValue(parameters, screenResolution);
                 Log.i(TAG, "最佳可用预览尺寸: " + bestPreviewSize);
                 bestPictureSize = ConfigUtil.findBestPictureSizeValue(parameters, screenResolution);
-                Log.i(TAG, "最佳可用预览尺寸: " + bestPictureSize);
+                if (!bestPictureSize.equals(bestPreviewSize)) {
+                    bestPictureSize = bestPreviewSize;
+                }
+                Log.i(TAG, "最佳可用照片尺寸(适合屏幕预览大小): " + bestPictureSize);
+
                 //是否竖屏
                 boolean isScreenPortrait = screenResolution.x < screenResolution.y;
                 boolean isPreviewSizePortrait = bestPreviewSize.x < bestPreviewSize.y;
-
                 if (isScreenPortrait != isPreviewSizePortrait) {
-                    bestPreviewSize = new Point(bestPreviewSize.y, bestPreviewSize.x);
+                    previewOnScreen = new Point(bestPreviewSize.y, bestPreviewSize.x);
+                } else {
+                    previewOnScreen = bestPreviewSize;
                 }
-                Log.i(TAG, "屏幕上预览大小: " + bestPreviewSize);
+                Log.i(TAG, "屏幕上最终预览大小: " + previewOnScreen);
             }
 
         }
@@ -200,40 +224,52 @@ public class CameraControllerImpl implements CameraController,Camera.PreviewCall
         return mCamera != null;
     }
 
+    @Override
     public Camera getCamera() {
         return mCamera;
     }
 
+    @Override
     public int getCameraOrientation() {
         return cameraOrientation;
     }
 
+    @Override
     public int getCameraFacing() {
         return cameraFacing;
     }
 
+    @Override
     public boolean isOpenAutoFocus() {
         return openAutoFocus;
     }
 
+    @Override
     public void setOpenAutoFocus(boolean openAutoFocus) {
         this.openAutoFocus = openAutoFocus;
     }
 
+    @Override
     public Point getScreenResolution() {
         return screenResolution;
     }
 
+    @Override
     public Point getCameraResolution() {
         return cameraResolution;
     }
 
     @Override
-    public synchronized void openDriver(SurfaceHolder holder,int cameraId) {
+    public Point getPreviewOnScreen() {
+        return previewOnScreen;
+    }
+
+    @Override
+    public synchronized void openDriver(SurfaceHolder holder, int cameraId) {
         openCamera(cameraId);
         initCameraParameters();
         try {
-            if (mCamera!=null) {
+            if (mCamera != null) {
                 mCamera.setPreviewDisplay(holder);
             }
         } catch (IOException e) {
@@ -255,7 +291,7 @@ public class CameraControllerImpl implements CameraController,Camera.PreviewCall
             mCamera.startPreview();
             previewing = true;
             if (isOpenAutoFocus()) {
-                autoFocusManager = new AutoFocusManager(mCamera,openAutoFocus);
+                autoFocusManager = new AutoFocusManager(mCamera, openAutoFocus);
             }
         }
         if (mCamera != null && previewing) {
@@ -280,14 +316,9 @@ public class CameraControllerImpl implements CameraController,Camera.PreviewCall
     public void onPreviewFrame(byte[] data, Camera camera) {
         if (previewFrameListener != null) {
             previewFrameListener.onPreviewFrame(data, camera);
+        } else {
+            throw new IllegalStateException("OnPreviewFrameListener为空," +
+                    "需调用#CameraManeger中setOnPreviewFrameListener方法");
         }
-    }
-
-    public interface OnPreviewFrameListener {
-        void onPreviewFrame(byte[] data, Camera camera);
-    }
-
-    public void setOnPreviewFrameListener(OnPreviewFrameListener listener) {
-        previewFrameListener = listener;
     }
 }

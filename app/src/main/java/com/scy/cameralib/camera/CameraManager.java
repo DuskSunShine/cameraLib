@@ -2,8 +2,10 @@ package com.scy.cameralib.camera;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.Rect;
 import android.util.Log;
 import android.view.SurfaceHolder;
+
 
 /**
  * Created by SCY on 2018/11/29 at 11:33.
@@ -15,10 +17,9 @@ public class CameraManager implements CameraLifecycle, SurfaceHolder.Callback {
     @SuppressLint("StaticFieldLeak")
     private static CameraManager cameraManager = null;
 
-    @SuppressLint("StaticFieldLeak")
-    private static Context mContext;
+    private Context mContext;
 
-    private CameraControllerImpl cameraControl;
+    private CameraControllerImpl cameraController;
     /**
      * 是否开始预览
      */
@@ -28,11 +29,25 @@ public class CameraManager implements CameraLifecycle, SurfaceHolder.Callback {
 
     private CameraFacing cameraId;
 
-    private CameraManager() {
+    private OnPreviewFrameListener previewFrameListener;
 
-    }
+    private OnTakePhotoListener onTakePhotoListener;
+    /**
+     * 拍照存储的文件
+     */
+    private String fileName;
 
-    public static CameraManager init(Context context) {
+    /**
+     * 拍照存储的文件夹名称
+     */
+    private String fileDir;
+
+    /**
+     * 矩形取景框大小
+     */
+    private Rect rectViewFinderSize;
+
+    /*public static CameraManager init(Context context) {
         mContext = context;
         if (cameraManager == null) {
             synchronized (CameraManager.class) {
@@ -40,15 +55,72 @@ public class CameraManager implements CameraLifecycle, SurfaceHolder.Callback {
             }
         }
         return cameraManager;
+    }*/
+    private CameraManager() {
     }
 
+    public CameraManager(Builder builder) {
+        this.fileName = builder.fileName;
+        this.fileDir = builder.fileDir;
+        this.mContext = builder.context;
+    }
+
+    public static class Builder {
+
+        private String fileName = "CameraLib";
+        private String fileDir = "CameraLib";
+        private Context context;
+        /**
+         * 矩形取景框大小
+         */
+        private Rect rectViewFinderSize;
+
+        public Builder(Context context) {
+            this.context = context;
+        }
+
+        public Builder setFileName(String fileName) {
+            this.fileName = fileName;
+            return this;
+        }
+
+        public Builder setFileDir(String fileDir) {
+            this.fileDir = fileDir;
+            return this;
+        }
+
+        public CameraManager build() {
+            return new CameraManager(this);
+        }
+    }
+
+    /**
+     * Take pictures
+     */
+    public void takePhoto() {
+        if (cameraManager != null) {
+            //framingRect = cameraManager.getFramingRect();
+            if (cameraController.getCamera() != null) {
+                cameraController.getCamera()
+                        .takePicture(null,
+                                null,
+                                new PhotoCallback(mContext,
+                                        fileName,
+                                        fileDir, rectViewFinderSize
+                                        , cameraController, onTakePhotoListener));
+            }
+        }
+    }
+
+
     @Override
-    public void onCreate(SurfaceHolder surfaceHolder, CameraFacing cameraId) {
+    public void cameraOpen(SurfaceHolder surfaceHolder, CameraFacing cameraId) {
         this.surfaceHolder = surfaceHolder;
         this.cameraId = cameraId;
         surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
         surfaceHolder.setKeepScreenOn(true);
-        cameraControl = new CameraControllerImpl(mContext);
+        cameraController = new CameraControllerImpl(mContext, previewFrameListener);
+
     }
 
 
@@ -57,7 +129,7 @@ public class CameraManager implements CameraLifecycle, SurfaceHolder.Callback {
         if (hasSurface) {
             // The activity was paused but not stopped, so the surface still exists. Therefore
             // surfaceCreated() won't be called, so init the camera here.
-            if (cameraControl.isCameraOpen()) {
+            if (cameraController.isCameraOpen()) {
                 Log.w(TAG, "已经打开摄像头");
                 return;
             }
@@ -72,14 +144,14 @@ public class CameraManager implements CameraLifecycle, SurfaceHolder.Callback {
      * 初始化相机，开始预览
      */
     private void initCameraPreview() {
-        cameraControl.openDriver(surfaceHolder, cameraId.ordinal());
-        cameraControl.startPreview();
+        cameraController.openDriver(surfaceHolder, cameraId.ordinal());
+        cameraController.startPreview();
     }
 
     @Override
     public void onPause() {
-        cameraControl.stopPreview();
-        cameraControl.closeDriver();
+        cameraController.stopPreview();
+        cameraController.closeDriver();
         if (!hasSurface) {
             surfaceHolder.removeCallback(this);
         }
@@ -92,7 +164,7 @@ public class CameraManager implements CameraLifecycle, SurfaceHolder.Callback {
         }
         if (!hasSurface) {
             hasSurface = true;
-            if (cameraControl.isCameraOpen()) {
+            if (cameraController.isCameraOpen()) {
                 Log.w(TAG, "已经打开摄像头");
                 return;
             }
@@ -111,6 +183,15 @@ public class CameraManager implements CameraLifecycle, SurfaceHolder.Callback {
     }
 
     public CameraControllerImpl getCameraController() {
-        return cameraControl;
+        return cameraController;
+    }
+
+
+    public void setOnPreviewFrameListener(OnPreviewFrameListener listener) {
+        previewFrameListener = listener;
+    }
+
+    public void setOnTakePhotoListener(OnTakePhotoListener onTakePhotoListener) {
+        this.onTakePhotoListener = onTakePhotoListener;
     }
 }
