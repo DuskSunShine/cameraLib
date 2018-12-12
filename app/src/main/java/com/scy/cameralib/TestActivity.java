@@ -32,19 +32,20 @@ public class TestActivity extends AppCompatActivity implements OnPreviewFrameLis
         holder = surface.getHolder();
         cameraManager.cameraOpen(holder,CameraFacing.BACK);
         cameraManager.setOnPreviewFrameListener(this);
+        cameraManager.setOnTakePhotoListener(this);
 
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        //cameraManager.onResume();
+        cameraManager.onResume();
 
     }
 
     @Override
     protected void onPause() {
-        //cameraManager.onPause();
+        cameraManager.onPause();
         super.onPause();
     }
 
