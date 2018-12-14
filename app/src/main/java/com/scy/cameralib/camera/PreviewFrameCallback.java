@@ -2,6 +2,7 @@ package com.scy.cameralib.camera;
 
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
+import android.graphics.Point;
 import android.graphics.Rect;
 import android.hardware.Camera;
 import android.util.Log;
@@ -28,8 +29,10 @@ public class PreviewFrameCallback implements Camera.PreviewCallback {
     public void onPreviewFrame(byte[] data, Camera camera) {
         Log.w(TAG,"开始预览回调,原始数据大小："+data.length);
         if (previewFrameListener != null) {
+            Point cameraResolution = cameraController.getCameraResolution();
+
             PlanarYUVLuminanceSource source =
-                    buildLuminanceSource(data, cameraController.getCameraResolution().x, cameraController.getCameraResolution().y);
+                    buildLuminanceSource(data, cameraResolution.x, cameraResolution.y);
             bitmap = bundleThumbnail(source);
             previewFrameListener.onPreviewFrame(data, bitmap, camera);
         } else {

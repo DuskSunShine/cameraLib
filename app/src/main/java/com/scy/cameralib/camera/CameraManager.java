@@ -290,7 +290,7 @@ public class CameraManager implements CameraLifecycle, SurfaceHolder.Callback {
         if (photoCallback == null) {
             photoCallback = new PhotoCallback(mContext,
                     fileName,
-                    fileDir, getFramingRect()
+                    fileDir, getFramingRectInPreview()
                     , cameraController, useViewFinder
                     , onTakePhotoListener);
         }
