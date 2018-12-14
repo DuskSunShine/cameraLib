@@ -21,7 +21,7 @@
         android:theme="@style/Theme.AppCompat.Light.NoActionBar"
         tools:ignore="GoogleAppIndexingWarning">
         <activity
-            android:name=".CameraActivity"
+            android:name=".test.CameraActivity"
             android:clearTaskOnLaunch="true"
             android:screenOrientation="sensorPortrait"
             android:stateNotNeeded="true">

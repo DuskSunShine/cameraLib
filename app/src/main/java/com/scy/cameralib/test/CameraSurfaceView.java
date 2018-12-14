@@ -1,4 +1,4 @@
-package com.scy.cameralib;
+package com.scy.cameralib.test;
 
 import android.content.Context;
 import android.graphics.Bitmap;

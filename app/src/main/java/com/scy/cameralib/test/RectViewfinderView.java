@@ -1,5 +1,5 @@
 
-package com.scy.cameralib;
+package com.scy.cameralib.test;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -10,7 +10,8 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.View;
-import java.util.ArrayList;
+
+import com.scy.cameralib.R;
 
 /**
  * This view is overlaid on top of the camera preview. It adds the viewfinder rectangle and partial

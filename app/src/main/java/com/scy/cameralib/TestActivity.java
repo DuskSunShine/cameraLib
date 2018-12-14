@@ -11,6 +11,7 @@ import com.scy.cameralib.camera.CameraFacing;
 import com.scy.cameralib.camera.CameraManager;
 import com.scy.cameralib.camera.OnPreviewFrameListener;
 import com.scy.cameralib.camera.OnTakePhotoListener;
+import com.scy.cameralib.test.CameraSurfaceView;
 import com.scy.cameralib.viewfinder.RectViewfinderView;
 
 

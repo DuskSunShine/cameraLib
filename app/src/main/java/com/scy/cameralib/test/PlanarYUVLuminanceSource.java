@@ -1,4 +1,4 @@
-package com.scy.cameralib;
+package com.scy.cameralib.test;
 
 /**
  * This object extends LuminanceSource around an array of YUV data returned from the camera driver,

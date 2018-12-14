@@ -1,4 +1,4 @@
-package com.scy.cameralib;
+package com.scy.cameralib.test;
 
 /**
  * The purpose of this class hierarchy is to abstract different bitmap implementations across

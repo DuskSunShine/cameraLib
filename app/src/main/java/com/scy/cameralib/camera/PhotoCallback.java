@@ -12,8 +12,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 
-import com.scy.cameralib.MediaScanner;
-import com.scy.cameralib.R;
+import com.scy.cameralib.test.MediaScanner;
 
 import java.io.BufferedOutputStream;
 import java.io.File;

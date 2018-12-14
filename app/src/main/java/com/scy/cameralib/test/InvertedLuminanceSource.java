@@ -1,4 +1,4 @@
-package com.scy.cameralib;
+package com.scy.cameralib.test;
 /**
  * A wrapper implementation of {@link LuminanceSource} which inverts the luminances it returns -- black becomes
  * white and vice versa, and each value becomes (255-value).

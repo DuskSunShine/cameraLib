@@ -4,13 +4,13 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".CameraActivity">
+    tools:context=".test.CameraActivity">
 
-   <com.scy.cameralib.CameraSurfaceView
+   <com.scy.cameralib.test.CameraSurfaceView
        android:id="@+id/surface"
        android:layout_width="match_parent"
        android:layout_height="match_parent" />
-   <com.scy.cameralib.RectViewfinderView
+   <com.scy.cameralib.test.RectViewfinderView
        android:id="@+id/maskView"
        android:layout_width="match_parent"
        android:layout_height="match_parent" />

@@ -1,4 +1,4 @@
-package com.scy.cameralib;
+package com.scy.cameralib.test;
 
 
 import android.content.pm.ActivityInfo;
@@ -15,6 +15,9 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
+
+import com.scy.cameralib.R;
+
 import java.io.ByteArrayOutputStream;
 
 public  class CameraActivity extends AppCompatActivity implements SurfaceHolder.Callback {
