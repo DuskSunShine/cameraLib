@@ -37,7 +37,7 @@ public class TestActivity extends AppCompatActivity implements OnPreviewFrameLis
                 .setFileName("CAMERA_LIB_FILE_NAME")
                 .setOpenAutoFocus(false)
                 .setUseViewFinder(true)
-                .setRectViewFinderSize(300,300)
+                .setRectViewFinderSize(800,500)
                 .build();
 
         holder = surface.getHolder();

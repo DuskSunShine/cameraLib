@@ -53,6 +53,7 @@ public class CameraManager implements CameraLifecycle, SurfaceHolder.Callback {
     private int height = 240;
 
     private Rect frameRect;
+    private Rect framingRectInPreview;
 
     /**
      * 是否开启连续对焦
@@ -198,7 +199,7 @@ public class CameraManager implements CameraLifecycle, SurfaceHolder.Callback {
         int centerX = (screenResolution.x) / 2;
         int centerY = (screenResolution.y) / 2;
         frameRect = new Rect(centerX - width / 2, centerY - height / 2, centerX + width / 2, centerY + height / 2);
-        Log.d(TAG, "设置矩形取景框大小: " + frameRect.toString());
+        Log.w(TAG, "设置矩形取景框大小: " + frameRect.toString());
     }
 
     /**
@@ -216,7 +217,7 @@ public class CameraManager implements CameraLifecycle, SurfaceHolder.Callback {
             int centerX = (screenResolution.x) / 2;
             int centerY = (screenResolution.y) / 2;
             frameRect = new Rect(centerX - width / 2, centerY - height / 2, centerX + width / 2, centerY + height / 2);
-            Log.d(TAG, "设置矩形取景框大小: " + frameRect.toString());
+            Log.w(TAG, "设置矩形取景框大小: " + frameRect.toString());
         }
         return frameRect;
     }
@@ -229,33 +230,37 @@ public class CameraManager implements CameraLifecycle, SurfaceHolder.Callback {
      * 这是计算出的只取取景框中的帧数据
      */
     public synchronized Rect getFramingRectInPreview() {
-        Rect framingRect = getFramingRect();
-        Point cameraResolution = cameraController.getCameraResolution();
-        Point screenResolution = cameraController.getScreenResolution();
-        if (framingRect == null) {
-            return null;
-        }
-        Rect rect = new Rect(framingRect);
-        if (cameraResolution == null || screenResolution == null) {
-            // Called early, before init even finished
-            return null;
-        }
-        if (screenResolution.x < screenResolution.y) {
-            // portrait
-            rect.left = rect.left * cameraResolution.y / screenResolution.x;
-            rect.right = rect.right * cameraResolution.y / screenResolution.x;
-            rect.top = rect.top * cameraResolution.x / screenResolution.y;
-            rect.bottom = rect.bottom * cameraResolution.x / screenResolution.y;
-        } else {
-            // landscape
-            rect.left = rect.left * cameraResolution.x / screenResolution.x;
-            rect.right = rect.right * cameraResolution.x / screenResolution.x;
-            rect.top = rect.top * cameraResolution.y / screenResolution.y;
-            rect.bottom = rect.bottom * cameraResolution.y / screenResolution.y;
+        if (framingRectInPreview==null){
+            Rect framingRect = getFramingRect();
+            Point cameraResolution = cameraController.getCameraResolution();
+            Point screenResolution = cameraController.getScreenResolution();
+            if (framingRect == null) {
+                return null;
+            }
+            Rect rect = new Rect(framingRect);
+            if (cameraResolution == null || screenResolution == null) {
+                // Called early, before init even finished
+                return null;
+            }
+            if (screenResolution.x < screenResolution.y) {
+                // portrait
+                rect.left = rect.left * cameraResolution.y / screenResolution.x;
+                rect.right = rect.right * cameraResolution.y / screenResolution.x;
+                rect.top = rect.top * cameraResolution.x / screenResolution.y;
+                rect.bottom = rect.bottom * cameraResolution.x / screenResolution.y;
+            } else {
+                // landscape
+                rect.left = rect.left * cameraResolution.x / screenResolution.x;
+                rect.right = rect.right * cameraResolution.x / screenResolution.x;
+                rect.top = rect.top * cameraResolution.y / screenResolution.y;
+                rect.bottom = rect.bottom * cameraResolution.y / screenResolution.y;
 
+            }
+            framingRectInPreview=rect;
+            Log.w(TAG, "预览中数据所在位置(只取取景框中的数据):" + framingRectInPreview.toString());
         }
-        //Log.e(TAG, "frame rect in preview:" + rect.toString());
-        return rect;
+
+        return framingRectInPreview;
     }
 
     @Override

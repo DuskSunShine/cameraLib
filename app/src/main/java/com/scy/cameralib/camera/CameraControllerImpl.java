@@ -1,17 +1,13 @@
 package com.scy.cameralib.camera;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.Matrix;
 import android.graphics.Point;
-import android.graphics.Rect;
 import android.hardware.Camera;
 import android.util.Log;
 import android.view.Display;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.WindowManager;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 /**

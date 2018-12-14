@@ -5,7 +5,6 @@ import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.hardware.Camera;
 import android.util.Log;
-
 import java.io.ByteArrayOutputStream;
 
 /**
@@ -18,7 +17,7 @@ public class PreviewFrameCallback implements Camera.PreviewCallback {
     private Bitmap bitmap;
     private boolean useViewFinder;
     private Rect rect;
-    public PreviewFrameCallback(CameraController cameraController,boolean useViewFinder,Rect rect ,OnPreviewFrameListener onPreviewFrameListener) {
+     PreviewFrameCallback(CameraController cameraController,boolean useViewFinder,Rect rect ,OnPreviewFrameListener onPreviewFrameListener) {
         this.previewFrameListener = onPreviewFrameListener;
         this.cameraController = cameraController;
         this.useViewFinder=useViewFinder;
@@ -40,7 +39,7 @@ public class PreviewFrameCallback implements Camera.PreviewCallback {
     }
 
     public PlanarYUVLuminanceSource buildLuminanceSource(byte[] data, int width, int height) {
-        // Rect rect = getFramingRect();
+
         if (useViewFinder) {
             if (rect == null) {
                 return null;

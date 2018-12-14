@@ -1,7 +1,6 @@
 package com.scy.cameralib.camera;
 
 import android.graphics.Point;
-import android.graphics.Rect;
 import android.hardware.Camera;
 import android.view.SurfaceHolder;
 

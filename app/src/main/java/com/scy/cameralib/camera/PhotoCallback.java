@@ -11,9 +11,6 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
-
-import com.scy.cameralib.test.MediaScanner;
-
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -27,8 +24,6 @@ public class PhotoCallback implements Camera.PictureCallback, Handler.Callback {
 
     private static final String TAG = "PhotoCallback";
     private static final int COMPLETE = 0x34;
-    private Thread thread;
-    private Runnable runnable;
     private Context context;
     private File photoFile;
     private String fileName;
