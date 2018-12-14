@@ -2,6 +2,7 @@ package com.scy.cameralib.camera;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.Point;
 import android.graphics.Rect;
 import android.util.Log;
 import android.view.SurfaceHolder;
@@ -35,17 +36,36 @@ public class CameraManager implements CameraLifecycle, SurfaceHolder.Callback {
     /**
      * 拍照存储的文件
      */
-    private String fileName;
+    private String fileName = "CameraLib";
 
     /**
      * 拍照存储的文件夹名称
      */
-    private String fileDir;
+    private String fileDir = "CameraLib";
 
     /**
      * 矩形取景框大小
      */
-    private Rect rectViewFinderSize;
+    /**
+     * 矩形取景框大小
+     */
+    private int width = 240;
+    private int height = 240;
+
+    private Rect frameRect;
+
+    /**
+     * 是否开启连续对焦
+     */
+    private boolean openAutoFocus = false;
+
+    /**
+     * 是否使用取景框
+     */
+    private boolean useViewFinder;
+
+    private PhotoCallback photoCallback;
+    private PreviewFrameCallback previewFrameCallback;
 
     /*public static CameraManager init(Context context) {
         mContext = context;
@@ -63,17 +83,35 @@ public class CameraManager implements CameraLifecycle, SurfaceHolder.Callback {
         this.fileName = builder.fileName;
         this.fileDir = builder.fileDir;
         this.mContext = builder.context;
+        this.openAutoFocus = builder.openAutoFocus;
+        this.useViewFinder = builder.useViewFinder;
+        this.width = builder.width;
+        this.height = builder.height;
     }
 
     public static class Builder {
-
-        private String fileName = "CameraLib";
-        private String fileDir = "CameraLib";
+        /**
+         * 拍照保存的照片名称
+         */
+        private String fileName;
+        /**
+         * 拍照时保存照片的文件夹
+         */
+        private String fileDir;
         private Context context;
+        /**
+         * 是否开启连续自动对焦(拍照不适合开启)
+         */
+        private boolean openAutoFocus;
         /**
          * 矩形取景框大小
          */
-        private Rect rectViewFinderSize;
+        private int width;
+        private int height;
+        /**
+         * 是否使用取景框
+         */
+        private boolean useViewFinder;
 
         public Builder(Context context) {
             this.context = context;
@@ -89,6 +127,22 @@ public class CameraManager implements CameraLifecycle, SurfaceHolder.Callback {
             return this;
         }
 
+        public Builder setOpenAutoFocus(boolean openAutoFocus) {
+            this.openAutoFocus = openAutoFocus;
+            return this;
+        }
+
+        public Builder setUseViewFinder(boolean useViewFinder) {
+            this.useViewFinder = useViewFinder;
+            return this;
+        }
+
+        public Builder setRectViewFinderSize(int width, int height) {
+            this.width = width;
+            this.height = height;
+            return this;
+        }
+
         public CameraManager build() {
             return new CameraManager(this);
         }
@@ -98,31 +152,111 @@ public class CameraManager implements CameraLifecycle, SurfaceHolder.Callback {
      * Take pictures
      */
     public void takePhoto() {
-        if (cameraManager != null) {
-            //framingRect = cameraManager.getFramingRect();
-            if (cameraController.getCamera() != null) {
-                cameraController.getCamera()
-                        .takePicture(null,
-                                null,
-                                new PhotoCallback(mContext,
-                                        fileName,
-                                        fileDir, rectViewFinderSize
-                                        , cameraController, onTakePhotoListener));
-            }
+//        if (cameraManager != null) {
+//            //framingRect = cameraManager.getFramingRect();
+//            if (cameraController.getCamera() != null) {
+//                cameraController.getCamera()
+//                        .takePicture(null,
+//                                null,
+//                                new PhotoCallback(mContext,
+//                                        fileName,
+//                                        fileDir, rectViewFinderSize
+//                                        , cameraController, onTakePhotoListener));
+//            }
+//        }
+        if (cameraController != null && photoCallback != null) {
+            cameraController.takePhoto(photoCallback);
         }
     }
 
 
     @Override
     public void cameraOpen(SurfaceHolder surfaceHolder, CameraFacing cameraId) {
+        if (surfaceHolder == null) {
+            throw new NullPointerException("SurfaceHolder为空！");
+        }
         this.surfaceHolder = surfaceHolder;
         this.cameraId = cameraId;
         surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
         surfaceHolder.setKeepScreenOn(true);
-        cameraController = new CameraControllerImpl(mContext, previewFrameListener);
-
+        if (cameraController == null) {
+            cameraController = new CameraControllerImpl(mContext, openAutoFocus, useViewFinder);
+        }
     }
 
+    /**
+     * 将设置的取景框宽高，转化为Rect
+     */
+    private void rectViewFinderWH2Rect() {
+        Point screenResolution = cameraController.getScreenResolution();
+        if (width > screenResolution.x) {
+            width = screenResolution.x;
+        }
+        if (height > screenResolution.y) {
+            height = screenResolution.y;
+        }
+        int centerX = (screenResolution.x) / 2;
+        int centerY = (screenResolution.y) / 2;
+        frameRect = new Rect(centerX - width / 2, centerY - height / 2, centerX + width / 2, centerY + height / 2);
+        Log.d(TAG, "设置矩形取景框大小: " + frameRect.toString());
+    }
+
+    /**
+     * 获取矩形取景框大小
+     *
+     * @return
+     */
+    public synchronized Rect getFramingRect() {
+        if (frameRect == null) {
+            Point screenResolution = cameraController.getScreenResolution();
+            if (screenResolution == null) {
+                // Called early, before init even finished
+                return null;
+            }
+            int centerX = (screenResolution.x) / 2;
+            int centerY = (screenResolution.y) / 2;
+            frameRect = new Rect(centerX - width / 2, centerY - height / 2, centerX + width / 2, centerY + height / 2);
+            Log.d(TAG, "设置矩形取景框大小: " + frameRect.toString());
+        }
+        return frameRect;
+    }
+
+    /**
+     * Like {@link #getFramingRect} but coordinates are in terms of the preview frame,
+     * not UI / screen.
+     *
+     * @return {@link Rect} expressing barcode scan area in terms of the preview size
+     * 这是计算出的只取取景框中的帧数据
+     */
+    public synchronized Rect getFramingRectInPreview() {
+        Rect framingRect = getFramingRect();
+        Point cameraResolution = cameraController.getCameraResolution();
+        Point screenResolution = cameraController.getScreenResolution();
+        if (framingRect == null) {
+            return null;
+        }
+        Rect rect = new Rect(framingRect);
+        if (cameraResolution == null || screenResolution == null) {
+            // Called early, before init even finished
+            return null;
+        }
+        if (screenResolution.x < screenResolution.y) {
+            // portrait
+            rect.left = rect.left * cameraResolution.y / screenResolution.x;
+            rect.right = rect.right * cameraResolution.y / screenResolution.x;
+            rect.top = rect.top * cameraResolution.x / screenResolution.y;
+            rect.bottom = rect.bottom * cameraResolution.x / screenResolution.y;
+        } else {
+            // landscape
+            rect.left = rect.left * cameraResolution.x / screenResolution.x;
+            rect.right = rect.right * cameraResolution.x / screenResolution.x;
+            rect.top = rect.top * cameraResolution.y / screenResolution.y;
+            rect.bottom = rect.bottom * cameraResolution.y / screenResolution.y;
+
+        }
+        //Log.e(TAG, "frame rect in preview:" + rect.toString());
+        return rect;
+    }
 
     @Override
     public void onResume() {
@@ -134,6 +268,7 @@ public class CameraManager implements CameraLifecycle, SurfaceHolder.Callback {
                 return;
             }
             initCameraPreview();
+
         } else {
             // Install the callback and wait for surfaceCreated() to init the camera.
             surfaceHolder.addCallback(this);
@@ -146,19 +281,45 @@ public class CameraManager implements CameraLifecycle, SurfaceHolder.Callback {
     private void initCameraPreview() {
         cameraController.openDriver(surfaceHolder, cameraId.ordinal());
         cameraController.startPreview();
+        rectViewFinderWH2Rect();
+        if (photoCallback == null) {
+            photoCallback = new PhotoCallback(mContext,
+                    fileName,
+                    fileDir, getFramingRect()
+                    , cameraController, useViewFinder
+                    , onTakePhotoListener);
+        }
+        if (previewFrameCallback == null) {
+            previewFrameCallback = new PreviewFrameCallback(cameraController, useViewFinder, getFramingRectInPreview(), previewFrameListener);
+        }
+        cameraController.setPreviewFrameCallback(previewFrameCallback);
     }
 
     @Override
     public void onPause() {
         cameraController.stopPreview();
+        removeCallback();
         cameraController.closeDriver();
         if (!hasSurface) {
             surfaceHolder.removeCallback(this);
         }
     }
 
+    /**
+     * remove takePhoto and framePreview callback.
+     */
+    private void removeCallback() {
+        if (photoCallback != null) {
+            photoCallback = null;
+        }
+        if (previewFrameCallback != null) {
+            previewFrameCallback = null;
+        }
+    }
+
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
+        Log.e(TAG,"surface create");
         if (holder == null) {
             Log.e(TAG, "*** WARNING *** surfaceCreated() gave us a null surface!");
         }
@@ -187,8 +348,8 @@ public class CameraManager implements CameraLifecycle, SurfaceHolder.Callback {
     }
 
 
-    public void setOnPreviewFrameListener(OnPreviewFrameListener listener) {
-        previewFrameListener = listener;
+    public void setOnPreviewFrameListener(OnPreviewFrameListener previewFrameListener) {
+        this.previewFrameListener = previewFrameListener;
     }
 
     public void setOnTakePhotoListener(OnTakePhotoListener onTakePhotoListener) {

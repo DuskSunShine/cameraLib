@@ -1,5 +1,6 @@
 package com.scy.cameralib.camera;
 
+import android.graphics.Bitmap;
 import android.hardware.Camera;
 
 /**
@@ -8,5 +9,5 @@ import android.hardware.Camera;
  */
 public interface OnPreviewFrameListener {
 
-    void onPreviewFrame(byte[] data, Camera camera);
+    void onPreviewFrame(byte[] data, Bitmap bitmap, Camera camera);
 }

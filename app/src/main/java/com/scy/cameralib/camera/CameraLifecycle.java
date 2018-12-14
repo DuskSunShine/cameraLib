@@ -14,6 +14,7 @@ public interface CameraLifecycle {
     /**
      * Activity{@link android.app.Activity#onCreate(Bundle)}
      * 中调用，初始化相机和控制类{@link CameraControllerImpl}
+     *
      * @param surfaceHolder
      * @param cameraId
      */
@@ -30,4 +31,5 @@ public interface CameraLifecycle {
      * 当app处于后台等情况就销毁预览及释放相机。
      */
     void onPause();
+
 }

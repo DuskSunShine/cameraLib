@@ -1,21 +1,24 @@
 package com.scy.cameralib.camera;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.Matrix;
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.hardware.Camera;
 import android.util.Log;
 import android.view.Display;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.WindowManager;
-import com.scy.cameralib.AutoFocusManager;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 /**
  * Created by SCY on 2018/11/29 at 11:52.
  * 相机控制具体实现
  */
-public class CameraControllerImpl implements CameraController, Camera.PreviewCallback {
+public class CameraControllerImpl implements CameraController {
 
     private static final String TAG = "CameraControllerImpl";
 
@@ -44,7 +47,12 @@ public class CameraControllerImpl implements CameraController, Camera.PreviewCal
     /**
      * 开启连续自动对焦(不适合拍照)
      */
-    private boolean openAutoFocus = false;
+    private boolean openAutoFocus;
+
+    /**
+     * 是否使用取景框
+     */
+    private boolean useViewFinder;
     /**
      * 开始初始化相机配置
      */
@@ -81,12 +89,16 @@ public class CameraControllerImpl implements CameraController, Camera.PreviewCal
     private int cwRotationCamera;
 
     private Context mContext;
-
-    private OnPreviewFrameListener previewFrameListener;
-
-    CameraControllerImpl(Context mContext, OnPreviewFrameListener previewFrameListener) {
+    CameraControllerImpl(Context mContext, boolean openAutoFocus, boolean useViewFinder) {
         this.mContext = mContext;
-        this.previewFrameListener = previewFrameListener;
+        this.openAutoFocus = openAutoFocus;
+        this.useViewFinder = useViewFinder;
+    }
+
+     void setPreviewFrameCallback(PreviewFrameCallback previewFrameCallback) {
+        if (mCamera!=null) {
+            mCamera.setPreviewCallback(previewFrameCallback);
+        }
     }
 
     @Override
@@ -245,8 +257,8 @@ public class CameraControllerImpl implements CameraController, Camera.PreviewCal
     }
 
     @Override
-    public void setOpenAutoFocus(boolean openAutoFocus) {
-        this.openAutoFocus = openAutoFocus;
+    public boolean isUseViewFinder() {
+        return useViewFinder;
     }
 
     @Override
@@ -290,13 +302,13 @@ public class CameraControllerImpl implements CameraController, Camera.PreviewCal
         if (mCamera != null && !previewing) {
             mCamera.startPreview();
             previewing = true;
-            if (isOpenAutoFocus()) {
-                autoFocusManager = new AutoFocusManager(mCamera, openAutoFocus);
-            }
+            //if (openAutoFocus) {
+            autoFocusManager = new AutoFocusManager(mCamera, openAutoFocus);
+            //}
         }
-        if (mCamera != null && previewing) {
-            mCamera.setPreviewCallback(this);
-        }
+//        if (mCamera != null && previewing) {
+//            mCamera.setPreviewCallback(previewFrameCallback);
+//        }
     }
 
     @Override
@@ -313,12 +325,9 @@ public class CameraControllerImpl implements CameraController, Camera.PreviewCal
     }
 
     @Override
-    public void onPreviewFrame(byte[] data, Camera camera) {
-        if (previewFrameListener != null) {
-            previewFrameListener.onPreviewFrame(data, camera);
-        } else {
-            throw new IllegalStateException("OnPreviewFrameListener为空," +
-                    "需调用#CameraManeger中setOnPreviewFrameListener方法");
+    public void takePhoto(PhotoCallback photoCallback) {
+        if (mCamera != null) {
+            mCamera.takePicture(null, null, photoCallback);
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.scy.cameralib.camera;
 
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.hardware.Camera;
 import android.view.SurfaceHolder;
 
@@ -46,10 +47,10 @@ public interface CameraController {
     boolean isOpenAutoFocus();
 
     /**
-     * @param openAutoFocus true开启连续自动对焦
+     * 是否使用取景框
+     * @return {@link CameraControllerImpl#useViewFinder}
      */
-    void setOpenAutoFocus(boolean openAutoFocus);
-
+    boolean isUseViewFinder();
     /**
      * 屏幕分辨率
      *
@@ -108,4 +109,9 @@ public interface CameraController {
      * 结束预览
      */
     void stopPreview();
+
+    /**
+     * 拍照
+     */
+    void takePhoto(PhotoCallback photoCallback);
 }
